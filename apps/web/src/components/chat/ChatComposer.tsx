@@ -5292,6 +5292,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       }
     };
     const handleTimelineWheel = (event: WheelEvent) => {
+      endMiddleClickAutoscroll();
       if (event.ctrlKey || !(event.target instanceof Element)) {
         return;
       }
@@ -5333,23 +5334,36 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     // composer. Scrolls don't extend the tail: streaming follow scrolls would
     // keep it open.
     let pointerScrollUntil = 0;
-    let lastScrollTop: number | null = null;
+    let lastScrollTop = getTimelineScrollableNode()?.scrollTop ?? null;
+    // Middle-click autoscroll keeps going after the button is released, until
+    // the next click, key press, or wheel, so its hold ends on those instead.
+    let middleClickAutoscroll = false;
     const holdPointerScroll = () => {
       pointerScrollUntil = Number.POSITIVE_INFINITY;
     };
-    const releasePointerScroll = () => {
+    const releasePointerScroll = (event: Event) => {
+      if (middleClickAutoscroll) {
+        if (event.type !== "blur") return;
+        middleClickAutoscroll = false;
+      }
       if (pointerScrollUntil === Number.POSITIVE_INFINITY) {
         pointerScrollUntil = window.performance.now() + POINTER_SCROLL_TAIL_MS;
       }
     };
+    const endMiddleClickAutoscroll = () => {
+      if (!middleClickAutoscroll) return;
+      middleClickAutoscroll = false;
+      pointerScrollUntil = 0;
+    };
     const handleTimelinePointerDown = (event: PointerEvent) => {
+      endMiddleClickAutoscroll();
       const scrollNode = getTimelineScrollableNode();
       if (!scrollNode || !(event.target instanceof Node)) return;
-      // Only scrollbar presses target the scroll node itself.
-      if (
-        event.target === scrollNode ||
-        (event.button === 1 && scrollNode.contains(event.target))
-      ) {
+      if (event.button === 1 && scrollNode.contains(event.target)) {
+        middleClickAutoscroll = true;
+        holdPointerScroll();
+      } else if (event.target === scrollNode) {
+        // Only scrollbar presses target the scroll node itself.
         holdPointerScroll();
       }
     };
@@ -5399,6 +5413,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       capture: true,
       passive: true,
     });
+    document.addEventListener("keydown", endMiddleClickAutoscroll, { capture: true });
     // Capture so a handler that stops propagation can't leave the hold stuck.
     for (const type of POINTER_SCROLL_RELEASE_EVENTS) {
       window.addEventListener(type, releasePointerScroll, { capture: true, passive: true });
@@ -5410,6 +5425,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       document.removeEventListener("scroll", handleTimelineScroll, true);
       document.removeEventListener("pointerdown", handleTimelinePointerDown, true);
       document.removeEventListener("touchmove", handleTimelineTouchMove, true);
+      document.removeEventListener("keydown", endMiddleClickAutoscroll, true);
       for (const type of POINTER_SCROLL_RELEASE_EVENTS) {
         window.removeEventListener(type, releasePointerScroll, true);
       }
