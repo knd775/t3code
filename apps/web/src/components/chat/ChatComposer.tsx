@@ -5351,12 +5351,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       }
     };
     const endMiddleClickAutoscroll = () => {
-      if (!middleClickAutoscroll) return;
+      if (!middleClickAutoscroll) return false;
       middleClickAutoscroll = false;
       pointerScrollUntil = 0;
+      return true;
     };
     const handleTimelinePointerDown = (event: PointerEvent) => {
-      endMiddleClickAutoscroll();
+      // The click that stops autoscroll doesn't start a new gesture.
+      if (endMiddleClickAutoscroll()) return;
       const scrollNode = getTimelineScrollableNode();
       if (!scrollNode || !(event.target instanceof Node)) return;
       if (event.button === 1 && scrollNode.contains(event.target)) {
