@@ -32,6 +32,8 @@ const ClaudeVersionSchema = TrimmedNonEmptyString.pipe(
 const ClaudeCodeCompatibilitySchema = Schema.Struct({
   minVersion: Schema.optional(ClaudeVersionSchema),
   maxVersionExclusive: Schema.optional(ClaudeVersionSchema),
+  /** Listed only for accounts whose Claude Code init reports this model. */
+  accountGated: Schema.optional(Schema.Boolean),
 }).pipe(
   Schema.check(
     Schema.makeFilter(

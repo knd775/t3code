@@ -12,6 +12,7 @@ import {
   resolveClaudeModelCatalog,
   resolveClaudeModelsForVersion,
   resolveClaudeModelSlug,
+  resolveUngatedClaudeModels,
   scopeClaudeModelCatalog,
 } from "./ClaudeModelCatalog.ts";
 
@@ -129,6 +130,44 @@ describe("Claude model catalog", () => {
     assert.strictEqual(
       formatClaudeVersionUpgradeMessage(catalog, "3.1.9"),
       "Claude Code v3.1.9 is too old for Claude Synthetic Next. Upgrade to v3.2.0 or newer to access it.",
+    );
+  });
+
+  it("lists account-gated models only for accounts that report them", () => {
+    const base = manifest();
+    const synthetic = base.providers?.claudeAgent;
+    assert.isDefined(synthetic);
+    const catalog = resolveClaudeModelCatalog({
+      ...base,
+      providers: {
+        claudeAgent: {
+          ...synthetic,
+          models: [
+            ...synthetic.models,
+            {
+              slug: "claude-synthetic-gated",
+              name: "Claude Synthetic Gated",
+              aliases: ["synthetic-gated"],
+              status: "current",
+              profile: "synthetic",
+              adapter: { claudeCode: { accountGated: true } },
+            },
+          ],
+        },
+      },
+    });
+    const slugs = (accountModels?: ReadonlyArray<string>) =>
+      resolveClaudeModelsForVersion(catalog, "3.2.0", accountModels).map((model) => model.slug);
+
+    assert.deepStrictEqual(slugs(), ["claude-synthetic-next"]);
+    assert.deepStrictEqual(slugs(["claude-other"]), ["claude-synthetic-next"]);
+    assert.deepStrictEqual(slugs(["Synthetic-Gated"]), [
+      "claude-synthetic-next",
+      "claude-synthetic-gated",
+    ]);
+    assert.deepStrictEqual(
+      resolveUngatedClaudeModels(catalog).map((model) => model.slug),
+      ["claude-synthetic-next"],
     );
   });
 

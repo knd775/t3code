@@ -151,6 +151,7 @@ type TestClaudeCapabilities = {
   readonly tokenSource: string | undefined;
   readonly apiProvider: string | undefined;
   readonly slashCommands: ReadonlyArray<ServerProviderSlashCommand>;
+  readonly accountModels: ReadonlyArray<string>;
 };
 
 function claudeCapabilities(overrides: Partial<TestClaudeCapabilities> = {}) {
@@ -161,6 +162,7 @@ function claudeCapabilities(overrides: Partial<TestClaudeCapabilities> = {}) {
       tokenSource: undefined,
       apiProvider: undefined,
       slashCommands: [],
+      accountModels: [],
       ...overrides,
     });
 }
@@ -3159,6 +3161,7 @@ it.layer(
                 tokenSource: undefined,
                 apiProvider: undefined,
                 slashCommands: [],
+                accountModels: [],
                 usage: { rate_limits_available: true, rate_limits: {} },
                 ...overrides,
               }),

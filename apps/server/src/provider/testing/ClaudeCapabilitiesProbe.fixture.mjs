@@ -41,7 +41,15 @@ lines.on("line", (line) => {
       agents: [],
       output_style: "default",
       available_output_styles: ["default"],
-      models: [],
+      models: [
+        {
+          value: "synthetic",
+          resolvedModel: "claude-synthetic-1",
+          displayName: "",
+          description: "",
+        },
+        { value: "claude-synthetic-gated", displayName: "", description: "" },
+      ],
       account: { email: "dev@example.com", subscriptionType: "pro", tokenSource: "oauth" },
     });
   }

@@ -49,6 +49,7 @@ import {
   type ClaudeModelCatalog,
   formatClaudeVersionUpgradeMessage,
   resolveClaudeModelsForVersion,
+  resolveUngatedClaudeModels,
 } from "./ClaudeModelCatalog.ts";
 
 const DEFAULT_CLAUDE_MODEL_CAPABILITIES: ModelCapabilities = createModelCapabilities({
@@ -238,6 +239,8 @@ type ClaudeCapabilitiesProbe = {
    */
   readonly apiProvider: string | undefined;
   readonly slashCommands: ReadonlyArray<ServerProviderSlashCommand>;
+  /** Model IDs and aliases Claude Code offers this account. */
+  readonly accountModels: ReadonlyArray<string>;
   /**
    * Subscription windows from the SDK's `get_usage` control request, or
    * `undefined` when the request itself failed. Absent windows on an
@@ -395,6 +398,9 @@ const probeClaudeCapabilities = (
           tokenSource: account?.tokenSource,
           apiProvider: account?.apiProvider,
           slashCommands: parseClaudeInitializationCommands(init.commands),
+          accountModels: (init.models ?? []).flatMap((model) =>
+            model.resolvedModel ? [model.value, model.resolvedModel] : [model.value],
+          ),
           ...(usage ? { usage } : {}),
         } satisfies ClaudeCapabilitiesProbe;
       }),
@@ -466,7 +472,7 @@ export const checkClaudeProviderStatus = Effect.fn("checkClaudeProviderStatus")(
   const resolvedEnvironment = environment ?? process.env;
   const checkedAt = DateTime.formatIso(yield* DateTime.now);
   const allModels = providerModelsFromSettings(
-    modelCatalog.models.map((entry) => entry.model),
+    resolveUngatedClaudeModels(modelCatalog),
     claudeSettings.customModels,
     DEFAULT_CLAUDE_MODEL_CAPABILITIES,
   );
@@ -555,16 +561,16 @@ export const checkClaudeProviderStatus = Effect.fn("checkClaudeProviderStatus")(
     });
   }
 
-  const models = providerModelsFromSettings(
-    resolveClaudeModelsForVersion(modelCatalog, parsedVersion),
-    claudeSettings.customModels,
-    DEFAULT_CLAUDE_MODEL_CAPABILITIES,
-  );
   const versionUpgradeMessage = formatClaudeVersionUpgradeMessage(modelCatalog, parsedVersion);
 
   const capabilities = resolveCapabilities
     ? yield* resolveCapabilities(claudeSettings).pipe(Effect.orElseSucceed(() => undefined))
     : undefined;
+  const models = providerModelsFromSettings(
+    resolveClaudeModelsForVersion(modelCatalog, parsedVersion, capabilities?.accountModels),
+    claudeSettings.customModels,
+    DEFAULT_CLAUDE_MODEL_CAPABILITIES,
+  );
   const skills = yield* discoverClaudeSkills(claudeSettings, cwd, resolvedEnvironment);
   const slashCommands = [COMPACT_SLASH_COMMAND, ...(capabilities?.slashCommands ?? [])];
   const dedupedSlashCommands = dedupeSlashCommands(slashCommands);
@@ -638,7 +644,7 @@ export const makePendingClaudeProvider = (
   Effect.gen(function* () {
     const checkedAt = yield* nowIso;
     const models = providerModelsFromSettings(
-      modelCatalog.models.map((entry) => entry.model),
+      resolveUngatedClaudeModels(modelCatalog),
       claudeSettings.customModels,
       DEFAULT_CLAUDE_MODEL_CAPABILITIES,
     );

@@ -158,12 +158,28 @@ function isVersionSupported(
   );
 }
 
+/** For snapshots taken before the account's models are known. */
+export function resolveUngatedClaudeModels(
+  catalog: ClaudeModelCatalog,
+): ReadonlyArray<ClaudeCatalogModel["model"]> {
+  return catalog.models
+    .filter((entry) => !entry.compatibility.accountGated)
+    .map((entry) => entry.model);
+}
+
+/** `accountModels` are the IDs Claude Code's init reports for the signed-in account. */
 export function resolveClaudeModelsForVersion(
   catalog: ClaudeModelCatalog,
   version: string | null | undefined,
+  accountModels: ReadonlyArray<string> = [],
 ): ReadonlyArray<ClaudeCatalogModel["model"]> {
   return catalog.models
-    .filter((entry) => isVersionSupported(entry.compatibility, version))
+    .filter(
+      (entry) =>
+        isVersionSupported(entry.compatibility, version) &&
+        (!entry.compatibility.accountGated ||
+          accountModels.some((id) => resolveClaudeModelSlug(catalog, id) === entry.model.slug)),
+    )
     .map((entry) => entry.model);
 }
 

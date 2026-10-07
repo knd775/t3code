@@ -280,6 +280,7 @@ it.layer(NodeServices.layer)("Claude capability probe SDK boundary", (it) => {
         subscriptionType: "pro",
         tokenSource: "oauth",
         apiProvider: undefined,
+        accountModels: ["synthetic", "claude-synthetic-1", "claude-synthetic-gated"],
         slashCommands: [
           {
             name: "review",
