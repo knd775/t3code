@@ -173,12 +173,15 @@ export function resolveClaudeModelsForVersion(
   version: string | null | undefined,
   accountModels: ReadonlyArray<string> = [],
 ): ReadonlyArray<ClaudeCatalogModel["model"]> {
+  // Some CLI versions report context variants as `claude-fable-5[1m]`.
+  const accountSlugs = new Set(
+    accountModels.map((id) => resolveClaudeModelSlug(catalog, id.replace(/\[.*$/, ""))),
+  );
   return catalog.models
     .filter(
       (entry) =>
         isVersionSupported(entry.compatibility, version) &&
-        (!entry.compatibility.accountGated ||
-          accountModels.some((id) => resolveClaudeModelSlug(catalog, id) === entry.model.slug)),
+        (!entry.compatibility.accountGated || accountSlugs.has(entry.model.slug)),
     )
     .map((entry) => entry.model);
 }

@@ -161,7 +161,7 @@ describe("Claude model catalog", () => {
 
     assert.deepStrictEqual(slugs(), ["claude-synthetic-next"]);
     assert.deepStrictEqual(slugs(["claude-other"]), ["claude-synthetic-next"]);
-    assert.deepStrictEqual(slugs(["Synthetic-Gated"]), [
+    assert.deepStrictEqual(slugs(["Synthetic-Gated[1m]"]), [
       "claude-synthetic-next",
       "claude-synthetic-gated",
     ]);

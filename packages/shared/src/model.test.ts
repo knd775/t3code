@@ -32,6 +32,7 @@ it.each([
   ["claude-opus-4-6", "Claude Opus 4.6"],
   ["claude-sonnet-4-20250514", "Claude Sonnet 4 20250514"],
   ["claude-opus-4-6[1m]", "Claude Opus 4.6[1m]"],
+  ["claude-mythos-5-1", "Claude Mythos 5.1"],
   ["openai/gpt-5.4-mini", "openai/GPT-5.4-Mini"],
   ["gemini-2.5-pro-preview-06-05", "Gemini 2.5 Pro Preview 06 05"],
   ["custom/model-v2", "custom/model-v2"],
